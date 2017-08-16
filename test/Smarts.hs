@@ -9,6 +9,7 @@ import           Text.Megaparsec
 
 main :: IO ()
 main = hspec $ do
+  innerStructureTests
   basicTests
   specificAtomTests
   stolenFromSmilesTests
@@ -36,6 +37,34 @@ smartsCmp (_:_) [] = False
 smartsCmp (x:xs) (y:ys) | x == y = smartsCmp xs ys
                         | (x == '1') || (x == '-') = smartsCmp xs (y:ys)
                         | otherwise = False
+
+singleBond :: BondExpression
+singleBond = BondExpression [BondOr [BondExplicitAnd [BondImplicitAnd [Single Pass]]]]
+
+notSingleBond :: BondExpression
+notSingleBond = BondExpression [BondOr [BondExplicitAnd [BondImplicitAnd [Single Negate]]]]
+
+doubleBond :: BondExpression
+doubleBond = BondExpression [BondOr [BondExplicitAnd [BondImplicitAnd [Double Pass]]]]
+
+explNa :: AtomExpression
+explNa = AtomExpression [AtomOr [AtomExplicitAnd [AtomImplicitAnd [Explicit Pass $ Atom "Na"]]]]
+
+innerStructureTests :: Spec
+innerStructureTests = describe "SMARTS is parsed correctly." $ do
+  it "C" $ parseSmarts "C" `shouldBe` Just (SMARTS [Linear $ Component [(singleBond, Primitive (Atom "C") [])]])
+  it "CC" $ parseSmarts "CC" `shouldBe` Just (SMARTS [Linear $ Component [(singleBond, Primitive (Atom "C") []), (singleBond, Primitive (Atom "C") [])]])
+  it "CN!-a=F" $ parseSmarts "CN!-a=F" `shouldBe` Just (SMARTS [Linear $ Component [(singleBond, Primitive (Atom "C") []),
+                                                                                    (singleBond, Primitive (Atom "N") []),
+                                                                                    (notSingleBond, Primitive AnyAromatic []),
+                                                                                    (doubleBond, Primitive (Atom "F") [])]])
+  it "CNa=F" $ parseSmarts "CNa=F" `shouldBe` Just (SMARTS [Linear $ Component [(singleBond, Primitive (Atom "C") []),
+                                                                                (singleBond, Primitive (Atom "N") []),
+                                                                                (singleBond, Primitive AnyAromatic []),
+                                                                                (doubleBond, Primitive (Atom "F") [])]])
+  it "C[Na]=F" $ parseSmarts "C[Na]=F" `shouldBe` Just (SMARTS [Linear $ Component [(singleBond, Primitive (Atom "C") []),
+                                                                                    (singleBond, Description explNa []),
+                                                                                    (doubleBond, Primitive (Atom "F") [])]])
 
 basicTests :: Spec
 basicTests = describe "Simple syntax constructions." $ do

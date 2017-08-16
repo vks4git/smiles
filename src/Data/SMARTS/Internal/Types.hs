@@ -125,8 +125,8 @@ data Bond = Single Negation
   deriving (Eq, Ord)
 
 instance Show Bond where
-  show (Single Negate)     = "NOT SINGLE"
-  show (Single Pass)       = "SINGLE"
+  show (Single Negate)     = "!-"
+  show (Single Pass)       = ""
   show (Double neg)        = show neg ++ "="
   show (Triple neg)        = show neg ++ "#"
   show (Aromatic neg)      = show neg ++ ":"
